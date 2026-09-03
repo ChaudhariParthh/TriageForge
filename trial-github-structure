@@ -1,0 +1,62 @@
+
+├── README.md
+│
+├── architecture/
+│   ├── architecture.png
+│   └── data-flow.png
+│
+├── n8n/
+│   ├── workflows/
+│   │   ├── alert-ingestion.json
+│   │   ├── enrichment.json
+│   │   ├── risk-scoring.json
+│   │   └── incident-response.json
+│   │
+│   └── README.md
+│
+├── alerts/
+│   ├── brute-force/
+│   ├── suspicious-login/
+│   ├── phishing/
+│   └── malware/
+│
+├── detection/
+│   ├── risk-scoring.md
+│   ├── correlation-rules.md
+│   └── mitre-mapping.md
+│
+├── playbooks/
+│   ├── brute-force.md
+│   ├── suspicious-login.md
+│   ├── phishing.md
+│   └── malware.md
+│
+├── database/
+│   ├── schema.sql
+│   └── seed.sql
+│
+├── scripts/
+│   ├── generate-alerts.py
+│   └── test-workflow.py
+│
+├── documentation/
+│   ├── setup.md
+│   ├── architecture.md
+│   ├── threat-model.md
+│   └── limitations.md
+│
+├── screenshots/
+│   ├── 01-alert.png
+│   ├── 02-enrichment.png
+│   ├── 03-risk-score.png
+│   ├── 04-ai-summary.png
+│   ├── 05-analyst-review.png
+│   ├── 06-incident.png
+│   └── 07-dashboard.png
+│
+├── demo/
+│   └── demo-script.md
+│
+└── results/
+    ├── test-results.md
+    └── performance.md
