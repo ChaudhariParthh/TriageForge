@@ -82,3 +82,5 @@ return [{
     }
   }
 }];
+
+/* **What it does:** Takes the correlated evidence and **calculates a risk score from 0–100**. It adds points for things like malicious threat-intel evidence, 50+ failed logins, successful login after brute-force, privileged accounts, unusual countries, and activity outside normal hours, then assigns a **LOW, MEDIUM, HIGH, or CRITICAL** severity with the reasons behind the score.
