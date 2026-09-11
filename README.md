@@ -1,2 +1,2 @@
 # TriageForge
-TriageForge ~ SOC Alert Triage &amp; Investigation Automation
+TriageForge ~ SOC Alert Triage &amp; Investigation Automation Pipeline
