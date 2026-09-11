@@ -1,0 +1,1648 @@
+{
+  "name": "TriageForge",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "=https://otx.alienvault.com/api/v1/indicators/IPv4/{{ $json.iocs.ip_addresses[0] }}/general",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-OTX-API-KEY",
+              "value": "0c55ed7ffbea909ef832cc46d6d7e515edc654f0036c042572a9440e8ce4a248"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4fc376b0-2423-41ea-8ff3-57a562c7e022",
+      "name": "AlienVault OTX",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -1024,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const otx = $input.first().json;\nconst original = $('IOC Extraction').first().json;\n\nconst pulseInfo = otx.pulse_info || {};\nconst validation = otx.validation || [];\nconst reputation = otx.reputation ?? null;\n\nreturn [{\n  json: {\n    ...original,\n    otx: {\n      reputation: reputation,\n      pulse_count: pulseInfo.count ?? 0,\n      sections: otx.sections || [],\n      validation: validation,\n      false_positive: otx.false_positive || []\n    }\n  }\n}];"
+      },
+      "id": "3f6a9279-a1ff-476a-80e1-eaa994722a36",
+      "name": "Normalize OTX",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1024,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "triageforge-alert",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "86fbdaff-7d02-4539-ac58-b43e9de7e16d",
+      "name": "wazuh alert",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1024,
+        -240
+      ],
+      "webhookId": "e7074087-1fb8-4b1c-b68e-4f183757706a"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3c360b93-5bdf-42f8-a48a-58d2debb32d9",
+              "name": "alert_id",
+              "value": "={{ $json.body?.id || $json.id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "be493784-e3c6-40be-8a84-ee801188a0f4",
+              "name": "alert_type",
+              "value": "={{ $json.body?.rule?.description || 'wazuh_alert' }}",
+              "type": "string"
+            },
+            {
+              "id": "935b18b7-856c-4ed7-a066-032f71cb7b19",
+              "name": "rule_id",
+              "value": "={{ $json.body?.rule?.id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "41f46729-b8a0-48ca-96d3-2967265ec876",
+              "name": "rule_level",
+              "value": "={{ Number($json.body?.rule?.level) || 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "15cda5b9-5c09-4c60-8f48-21117db5994f",
+              "name": "rule_description",
+              "value": "={{ $json.body?.rule?.description || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "42e674c4-59bf-4881-9aa1-6c6aa30e49e9",
+              "name": "timestamp",
+              "value": "={{ $json.body?.timestamp || $json.timestamp || $now }}",
+              "type": "string"
+            },
+            {
+              "id": "13a7f70d-2bda-47b9-97a0-f54dbc1e96bf",
+              "name": "agent_name",
+              "value": "={{ $json.body?.agent?.name || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "f0c4f7b8-322a-4466-8d8b-5a512dbf9041",
+              "name": "agent_id",
+              "value": "={{ $json.body?.agent?.id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "337e071f-24ab-4eb4-9923-472929f4737c",
+              "name": "username",
+              "value": "={{ $json.body?.data?.srcuser || $json.body?.data?.dstuser || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "3cd5c54a-3b7e-4e2d-a3bb-3a3835b96aab",
+              "name": "source_ip",
+              "value": "={{ $json.body?.data?.srcip || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "5145aeab-f952-4a6e-a010-a6ce8d947cfb",
+              "name": "destination_ip",
+              "value": "={{ $json.body?.data?.dstip || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "ceb52efe-c50a-48eb-99f8-9cb79b51fe3f",
+              "name": "hostname",
+              "value": "={{ $json.body?.agent?.name || $json.body?.data?.hostname || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "aa208baf-b4c6-447f-8ee8-0f83cf968430",
+              "name": "file_path",
+              "value": "={{ $json.body?.syscheck?.path || $json.body?.data?.path || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "975e4b4e-bf00-4eed-bd58-fee20940ea30",
+              "name": "process",
+              "value": "={{ $json.body?.data?.process?.name || $json.body?.data?.process || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "64d9edb5-edc1-45e9-ab53-f64fefdc4e41",
+              "name": "failed_attempts",
+              "value": "={{ Number($json.body?.rule?.frequency || $json.body?.rule?.firedtimes || 0) }}",
+              "type": "string"
+            },
+            {
+              "id": "9e91dfd4-0a43-44f9-a2e6-8bddec1c4556",
+              "name": "successful_login_after_bruteforce",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "131533bf-c04a-4dfb-848f-78206d2bc477",
+              "name": "privileged_account",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "73f267e5-6849-40b5-a38c-d72f6330bff6",
+              "name": "unusual_country",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "be85db3c-5a5b-43da-b6a7-2d729afafd72",
+              "name": "outside_normal_hours",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "2257be15-eda8-405a-8688-063ef1d31451",
+              "name": "analyst_decision",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "54da05fb-7c61-4c28-99d2-ef41f66aeacd",
+              "name": "severity",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "8016bad4-7c4b-43ab-92d6-9116877a3f13",
+              "name": "risk_reasons",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "dcf9bd7e-a692-4b83-85aa-dba4ffc3a003",
+              "name": "decision_timestamp",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "5d0a984a-305d-436e-95fd-f4d16c050aed",
+              "name": "incident_status",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "881f50c5-e506-4c5a-bc61-823d444d45fd",
+              "name": "risk_score",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0f51e415-27f3-493a-b520-c9b9edd31922",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -800,
+        -240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\n// Convert any value to a searchable string\nconst rawText = JSON.stringify(input);\n\n// ---------- IOC REGEX PATTERNS ----------\n\n// IPv4 addresses\nconst ipRegex =\n  /\\b(?:(?:25[0-5]|2[0-4]\\d|1?\\d?\\d)\\.){3}(?:25[0-5]|2[0-4]\\d|1?\\d?\\d)\\b/g;\n\n// URLs\nconst urlRegex =\n  /\\bhttps?:\\/\\/[^\\s\"'<>]+/gi;\n\n// Domains\nconst domainRegex =\n  /\\b(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,}(?:\\/[^\\s\"'<>]*)?/g;\n\n// MD5\nconst md5Regex =\n  /\\b[a-fA-F0-9]{32}\\b/g;\n\n// SHA1\nconst sha1Regex =\n  /\\b[a-fA-F0-9]{40}\\b/g;\n\n// SHA256\nconst sha256Regex =\n  /\\b[a-fA-F0-9]{64}\\b/g;\n\n// Email addresses\nconst emailRegex =\n  /\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b/g;\n\n\n// ---------- EXTRACTION FUNCTION ----------\n\nfunction extract(regex) {\n  return [...new Set(rawText.match(regex) || [])];\n}\n\n\n// ---------- EXTRACT IOCs ----------\n\nconst ipAddresses = extract(ipRegex);\n\nconst urls = extract(urlRegex);\n\nconst domains = extract(domainRegex);\n\nconst md5Hashes = extract(md5Regex);\n\nconst sha1Hashes = extract(sha1Regex);\n\nconst sha256Hashes = extract(sha256Regex);\n\nconst emails = extract(emailRegex);\n\n\n// ---------- REMOVE DOMAINS THAT ARE ACTUALLY URL PARTS ----------\n\nconst cleanDomains = domains.filter(domain =>\n  !domain.startsWith(\"http://\") &&\n  !domain.startsWith(\"https://\")\n);\n\n\n// ---------- OUTPUT ----------\n\nreturn [\n  {\n    json: {\n      ...input,\n\n      iocs: {\n        ip_addresses: ipAddresses,\n        urls: urls,\n        domains: cleanDomains,\n        hashes: {\n          md5: md5Hashes,\n          sha1: sha1Hashes,\n          sha256: sha256Hashes\n        },\n        email_addresses: emails\n      },\n\n      ioc_summary: {\n        ip_count: ipAddresses.length,\n        url_count: urls.length,\n        domain_count: cleanDomains.length,\n        hash_count:\n          md5Hashes.length +\n          sha1Hashes.length +\n          sha256Hashes.length,\n        email_count: emails.length,\n\n        has_ip: ipAddresses.length > 0,\n        has_url: urls.length > 0,\n        has_domain: cleanDomains.length > 0,\n        has_hash:\n          md5Hashes.length +\n          sha1Hashes.length +\n          sha256Hashes.length > 0,\n        has_email: emails.length > 0\n      }\n    }\n  }\n];"
+      },
+      "id": "13ae4e2c-cd39-4506-a7db-cf835ffcd6e2",
+      "name": "IOC Extraction",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -576,
+        -240
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.ioc_summary.has_ip }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    },
+                    "id": "e2a09736-4055-4792-82d7-6b877b3e2687"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "IP Enrichment"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "1ed87693-fa77-422f-acc4-5b77f556b6c0",
+                    "leftValue": "={{ $json.ioc_summary.has_hash }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Hash Enrichment"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "98db9e41-15ae-49ac-884e-f7ab8c621ff9",
+                    "leftValue": "={{ $json.ioc_summary.has_url || $json.ioc_summary.has_domain }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "URL Domain Enrichment"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "bb536fb5-6d75-459e-9bfa-30f1968fd41f",
+                    "leftValue": "={{ !$json.ioc_summary.has_ip && !$json.ioc_summary.has_hash && !$json.ioc_summary.has_url && !$json.ioc_summary.has_domain }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "No IOC"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "68b84826-a57c-4ba2-9b84-7cb0300785bb",
+      "name": "IOC Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -352,
+        -272
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://www.virustotal.com/api/v3/ip_addresses/{{ $json.iocs.ip_addresses[0] }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "virusTotalApi",
+        "options": {}
+      },
+      "id": "bf3d93ca-87eb-4cce-a160-65a0fb7c54c4",
+      "name": "VirusTotal HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -128,
+        -512
+      ],
+      "credentials": {
+        "virusTotalApi": {
+          "id": "i7OjaS9qygIFrVaq",
+          "name": "VirusTotal account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const vt = $input.first().json;\nconst original = $('IOC Extraction').first().json;\n\nconst stats = vt.data?.attributes?.last_analysis_stats || {};\n\nreturn [{\n  json: {\n    ...original,\n\n    virustotal: {\n      status: \"success\",\n      ioc_type: \"ip\",\n      ioc: original.iocs?.ip_addresses?.[0] || null,\n      malicious: Number(stats.malicious || 0),\n      suspicious: Number(stats.suspicious || 0),\n      harmless: Number(stats.harmless || 0),\n      undetected: Number(stats.undetected || 0),\n      reputation: Number(vt.data?.attributes?.reputation || 0),\n      tags: vt.data?.attributes?.tags || []\n    }\n  }\n}];"
+      },
+      "id": "35d33d94-606e-42aa-839d-9a1aa4b79a39",
+      "name": "Normalise VirusTotal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        96,
+        -512
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.abuseipdb.com/api/v2/check",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "ipAddress",
+              "value": "={{ $json.source_ip }}"
+            },
+            {
+              "name": "maxAgeInDays",
+              "value": "90"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Key",
+              "value": "c6698dc954c2bf73aa20b8d710990a79fcfb9384799bfb8cabeb9cd67079ec3d1262dc1fc0493019"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d0ef758b-7999-4f03-998c-6f0b6d931511",
+      "name": "AbuseIPDB         HTTP Request IP Reputation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        320,
+        -512
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const abuse = $input.first().json;\nconst original = $('IOC Extraction').first().json;\n\nconst data = abuse.data || {};\n\nreturn [{\n  json: {\n    ...original,\n    abuseipdb: {\n      abuse_confidence_score: data.abuseConfidenceScore ?? 0,\n      total_reports: data.totalReports ?? 0,\n      distinct_users: data.numDistinctUsers ?? 0,\n      country_code: data.countryCode ?? null,\n      usage_type: data.usageType ?? null,\n      isp: data.isp ?? null,\n      domain: data.domain ?? null,\n      is_public: data.isPublic ?? null,\nis_whitelisted: data.isWhitelisted ?? null,\n      last_reported_at: data.lastReportedAt ?? null\n    }\n  }\n}];"
+      },
+      "id": "3eeaaa94-cd8c-4db1-899e-37b407654be9",
+      "name": "Normalize AbuseIPDB",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        -512
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://ipwho.is/{{ $json.iocs.ip_addresses[0] }}",
+        "options": {}
+      },
+      "id": "086fe338-ce03-4581-b3c6-688d9060d7bb",
+      "name": "GeoIP Lookup",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        768,
+        -512
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const geo = $input.first().json;\nconst original = $('IOC Extraction').first().json;\n\nreturn [{\n  json: {\n    ...original,\n    geoip: {\n      success: geo.success ?? false,\n      country: geo.country ?? null,\n      country_code: geo.country_code ?? null,\n      region: geo.region ?? null,\n      city: geo.city ?? null,\n      latitude: geo.latitude ?? null,\n      longitude: geo.longitude ?? null,\n      isp: geo.connection?.isp ?? null,\n      organization: geo.connection?.org ?? null\n    }\n  }\n}];"
+      },
+      "id": "619b3c79-4bfa-47c8-945d-e3033731b91b",
+      "name": "Normalize GeoIP",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        992,
+        -512
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://www.virustotal.com/api/v3/files/{{ $json.iocs.hashes.sha256[0] || $json.iocs.hashes.sha1[0] || $json.iocs.hashes.md5[0] }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "virusTotalApi",
+        "options": {}
+      },
+      "id": "5bd7e734-09ea-491b-8f70-bdfdf5de9090",
+      "name": "VirusTotal (Hash)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        768,
+        -320
+      ],
+      "credentials": {
+        "virusTotalApi": {
+          "id": "i7OjaS9qygIFrVaq",
+          "name": "VirusTotal account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst data = input.data || {};\nconst attributes = data.attributes || {};\n\nreturn [{\n  json: {\n    ...input,\n    virustotal: {\n      status: \"success\",\n      ioc_type: \"hash\",\n      ioc: data.id || \"\",\n      sha256: attributes.sha256 || \"\",\n      sha1: attributes.sha1 || \"\",\n      md5: attributes.md5 || \"\",\n      malicious: Number(attributes.last_analysis_stats?.malicious || 0),\n      suspicious: Number(attributes.last_analysis_stats?.suspicious || 0),\n      harmless: Number(attributes.last_analysis_stats?.harmless || 0),\n      undetected: Number(attributes.last_analysis_stats?.undetected || 0),\n      reputation: Number(attributes.reputation || 0),\n      file_type: attributes.type_description || \"\",\n      file_name: attributes.meaningful_name || \"\"\n    }\n  }\n}];"
+      },
+      "id": "0eb20dfe-c405-4516-a728-468b25a2533a",
+      "name": "Normalize VirusTotal Hash",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        992,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nconst url = input.iocs?.urls?.[0] || \"\";\n\nconst urlId = url\n  ? Buffer.from(url)\n      .toString(\"base64\")\n      .replace(/\\+/g, \"-\")\n      .replace(/\\//g, \"_\")\n      .replace(/=+$/, \"\")\n  : \"\";\n\nreturn [{\n  json: {\n    ...input,\n    vt_url: url,\n    vt_url_id: urlId\n  }\n}];"
+      },
+      "id": "634b4ff5-8670-4e77-9feb-d502bb088bed",
+      "name": "Code in JavaScript",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        96,
+        -32
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://www.virustotal.com/api/v3/urls/{{ $json.vt_url_id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "virusTotalApi",
+        "options": {}
+      },
+      "id": "c4f27d79-4b1e-4dea-949e-f40ecf9e1265",
+      "name": "URL/Domain Enrichment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        320,
+        -32
+      ],
+      "credentials": {
+        "virusTotalApi": {
+          "id": "i7OjaS9qygIFrVaq",
+          "name": "VirusTotal account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst data = input.data || {};\nconst attributes = data.attributes || {};\n\nreturn [{\n  json: {\n    ...input,\n    virustotal_url: {\n      status: \"success\",\n      ioc_type: \"url\",\n      ioc: input.vt_url || data.id || \"\",\n      malicious: Number(attributes.last_analysis_stats?.malicious || 0),\n      suspicious: Number(attributes.last_analysis_stats?.suspicious || 0),\n      harmless: Number(attributes.last_analysis_stats?.harmless || 0),\n      undetected: Number(attributes.last_analysis_stats?.undetected || 0),\n      reputation: Number(attributes.reputation || 0),\n      categories: attributes.categories || {}\n    }\n  }\n}];"
+      },
+      "id": "0d64a2ac-c029-49b3-8c88-d9787eb2abf4",
+      "name": "Code in JavaScript1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        -32
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://otx.alienvault.com/api/v1/indicators/domain/{{ $json.vt_url.replace(/^https?:\\/\\//, '').split('/')[0] }}/general",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-OTX-API-KEY",
+              "value": "0c55ed7ffbea909ef832cc46d6d7e515edc654f0036c042572a9440e8ce4a248"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5eb7694f-b82e-4821-932f-b0bf10ebeba4",
+      "name": "OTX Domain Lookup",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        768,
+        -32
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst pulseInfo = input.pulse_info || {};\n\nreturn [{\n  json: {\n    ...input,\n    otx: {\n      status: \"success\",\n      ioc_type: \"domain\",\n      domain: input.vt_url\n        ? input.vt_url.replace(/^https?:\\/\\//, '').split('/')[0]\n        : \"\",\n      pulse_count: Number(pulseInfo.count || 0),\n      pulses: pulseInfo.pulses || []\n    }\n  }\n}];"
+      },
+      "id": "b2750cf1-a227-470e-96af-84e813e4327d",
+      "name": "Normalize OTX1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        992,
+        -32
+      ]
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "id": "37dfc936-2186-4c1b-9efd-0d5456f021fe",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1216,
+        -272
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nconst failedAttempts = Number(input.failed_attempts) || 0;\n\nconst vtMalicious =\n  Number(input.virustotal?.malicious) || 0;\n\nconst vtSuspicious =\n  Number(input.virustotal?.suspicious) || 0;\n\nconst vtUrlMalicious =\n  Number(input.virustotal_url?.malicious) || 0;\n\nconst vtUrlSuspicious =\n  Number(input.virustotal_url?.suspicious) || 0;\n\nconst abuseScore =\n  Number(input.abuseipdb?.abuse_confidence_score) || 0;\n\nconst abuseReports =\n  Number(input.abuseipdb?.total_reports) || 0;\n\nconst otxPulses =\n  Number(input.otx?.pulse_count) || 0;\n\nconst maliciousSources = [\n  vtMalicious > 0,\n  vtUrlMalicious > 0,\n  abuseScore >= 50,\n  otxPulses > 0\n].filter(Boolean).length;\n\nconst evidence = {\n  failed_attempts: failedAttempts,\n\n  threat_intelligence: {\n    virustotal_malicious: vtMalicious,\n    virustotal_suspicious: vtSuspicious,\n\n    virustotal_url_malicious: vtUrlMalicious,\n    virustotal_url_suspicious: vtUrlSuspicious,\n\n    abuse_confidence_score: abuseScore,\n    abuse_reports: abuseReports,\n\n    otx_pulse_count: otxPulses,\n\n    malicious_source_count: maliciousSources\n  },\n\n  network_context: {\n    is_public: input.abuseipdb?.is_public ?? null,\n    is_whitelisted: input.abuseipdb?.is_whitelisted ?? null,\n    geoip_success: input.geoip?.success ?? false\n  },\n\n  ioc_context: {\n    ip_count: input.ioc_summary?.ip_count || 0,\n    hash_count: input.ioc_summary?.hash_count || 0,\n    url_count: input.ioc_summary?.url_count || 0,\n    domain_count: input.ioc_summary?.domain_count || 0,\n    has_ip: input.ioc_summary?.has_ip || false,\n    has_hash: input.ioc_summary?.has_hash || false,\n    has_url: input.ioc_summary?.has_url || false,\n    has_domain: input.ioc_summary?.has_domain || false\n  }\n};\n\nreturn [{\n  json: {\n    ...input,\n    failed_attempts: failedAttempts,\n    correlation: evidence\n  }\n}];"
+      },
+      "id": "29afd4f7-0b5f-4a04-8d26-6fe2d9e1da45",
+      "name": "Correlation Engine",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        -240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nconst failedAttempts = Number(input.failed_attempts) || 0;\n\nconst maliciousSources =\n  Number(input.correlation?.threat_intelligence?.malicious_source_count) || 0;\n\nconst successfulAfterBruteforce =\n  input.successful_login_after_bruteforce === true;\n\nconst privilegedAccount =\n  input.privileged_account === true;\n\nconst unusualCountry =\n  input.unusual_country === true;\n\nconst outsideNormalHours =\n  input.outside_normal_hours === true;\n\nlet score = 0;\nconst reasons = [];\n\nif (maliciousSources > 0) {\n  score += 30;\n  reasons.push(\"Threat-intelligence evidence indicates malicious activity\");\n}\n\nif (failedAttempts >= 50) {\n  score += 20;\n  reasons.push(\"50+ failed login attempts\");\n}\n\nif (successfulAfterBruteforce) {\n  score += 20;\n  reasons.push(\"Successful login after brute-force activity\");\n}\n\nif (privilegedAccount) {\n  score += 15;\n  reasons.push(\"Privileged account involved\");\n}\n\nif (unusualCountry) {\n  score += 10;\n  reasons.push(\"Login from an unusual country\");\n}\n\nif (outsideNormalHours) {\n  score += 5;\n  reasons.push(\"Activity occurred outside normal hours\");\n}\n\nscore = Math.max(0, Math.min(100, score));\n\nlet severity;\n\nif (score >= 80) {\n  severity = \"CRITICAL\";\n} else if (score >= 60) {\n  severity = \"HIGH\";\n} else if (score >= 30) {\n  severity = \"MEDIUM\";\n} else {\n  severity = \"LOW\";\n}\n\nreturn [{\n  json: {\n    ...input,\n    severity: severity,\n    risk_score: score,\n    risk_reasons: JSON.stringify(reasons),\n    risk: {\n      score,\n      severity,\n      reasons\n    }\n  }\n}];"
+      },
+      "id": "c64689ab-92f3-4b98-b281-ea816058f74e",
+      "name": "Risk Scoring",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1664,
+        -240
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "90e4922e-1f20-4ce3-995d-f8d229481327",
+              "leftValue": "={{ $json.risk.score }}",
+              "rightValue": 60,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4942fbba-bc21-4b39-8ba0-1f3fb502fb14",
+      "name": "Risk Routing",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1888,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nconst risk = input.risk || {};\nconst correlation = input.correlation || {};\nconst ti = correlation.threat_intelligence || {};\nconst ioc = correlation.ioc_context || {};\nconst network = correlation.network_context || {};\n\nreturn [{\n  json: {\n    ...input,\n\n    investigation: {\n      alert_id: input.alert_id || \"\",\n      alert_type: input.alert_type || \"\",\n      rule_id: input.rule_id || \"\",\n      rule_level: input.rule_level ?? 0,\n      rule_description: input.rule_description || \"\",\n\n      agent: {\n        name: input.agent_name || \"\",\n        id: input.agent_id || \"\",\n        hostname: input.hostname || \"\"\n      },\n\n      user: {\n        username: input.username || \"\",\n        privileged_account: input.privileged_account === true\n      },\n\n      network: {\n        source_ip: input.source_ip || \"\",\n        destination_ip: input.destination_ip || \"\",\n        is_public: network.is_public ?? null,\n        is_whitelisted: network.is_whitelisted ?? null,\n        geoip_success: network.geoip_success ?? false\n      },\n\n      file: {\n        path: input.file_path || \"\",\n        process: input.process || \"\"\n      },\n\n      iocs: {\n        has_ip: ioc.has_ip || false,\n        has_hash: ioc.has_hash || false,\n        has_url: ioc.has_url || false,\n        has_domain: ioc.has_domain || false,\n        ip_count: ioc.ip_count || 0,\n        hash_count: ioc.hash_count || 0,\n        url_count: ioc.url_count || 0,\n        domain_count: ioc.domain_count || 0\n      },\n\n      risk: {\n        score: risk.score ?? 0,\n        severity: risk.severity ?? \"UNKNOWN\",\n        reasons: risk.reasons || []\n      },\n\n      evidence: {\n        failed_attempts: correlation.failed_attempts ?? 0,\n\n        virustotal_malicious:\n          ti.virustotal_malicious ?? 0,\n\n        virustotal_suspicious:\n          ti.virustotal_suspicious ?? 0,\n\n        virustotal_url_malicious:\n          ti.virustotal_url_malicious ?? 0,\n\n        virustotal_url_suspicious:\n          ti.virustotal_url_suspicious ?? 0,\n\n        abuse_confidence_score:\n          ti.abuse_confidence_score ?? 0,\n\n        abuse_reports:\n          ti.abuse_reports ?? 0,\n\n        otx_pulse_count:\n          ti.otx_pulse_count ?? 0,\n\n        malicious_source_count:\n          ti.malicious_source_count ?? 0\n      },\n\n      investigation_context:\n        \"Assess the available Wazuh alert, IOC, threat-intelligence, network, file, user, and risk evidence. Summarize why this alert requires investigation. Clearly distinguish confirmed evidence from unavailable information.\",\n\n      analyst_question:\n        \"What does the available evidence indicate, why was this risk score assigned, and what should the analyst verify next?\"\n    }\n  }\n}];"
+      },
+      "id": "b04b45ff-649b-4ab4-939d-01eed89d92b4",
+      "name": "AI Investigation Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2112,
+        -240
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI",
+          "cachedResultUrl": ""
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are assisting an L1 SOC analyst in investigating a security alert.\n\nReview the alert details and correlated evidence below.\n\nProvide:\n1. A concise investigation summary.\n2. The strongest evidence supporting the alert severity.\n3. Any signs that could indicate a false positive or require validation.\n4. Recommended next investigation steps for the analyst.\n\nDo not change the deterministic risk score.\nDo not declare the incident definitively malicious or benign.\nBase your analysis only on the supplied evidence.\n\nAlert evidence:\n{{ JSON.stringify($json.investigation) }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "5920107d-cba7-4a6d-90bb-93379450b88b",
+      "name": "Message a model",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        2336,
+        -240
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "sendAndWait",
+        "user": {
+          "__rl": true,
+          "value": "U0BULT6R24V",
+          "mode": "list",
+          "cachedResultName": "Parth Chaudhari (@parthchaudhari973)"
+        },
+        "message": "=TRIAGEFORGE — ANALYST REVIEW REQUIRED\n\nSecurity Alert\nAlert ID: {{ $('AI Investigation Summary').first().json.investigation.alert_id }}\nAlert Type: {{ $('AI Investigation Summary').first().json.investigation.alert_type }}\nRule: {{ $('AI Investigation Summary').first().json.investigation.rule_id }} — {{ $('AI Investigation Summary').first().json.investigation.rule_description }}\nAgent: {{ $('AI Investigation Summary').first().json.investigation.agent.name }}\nUsername: {{ $('AI Investigation Summary').first().json.investigation.user.username }}\nSource IP: {{ $('AI Investigation Summary').first().json.investigation.network.source_ip }}\nDestination IP: {{ $('AI Investigation Summary').first().json.investigation.network.destination_ip }}\n\nRisk Assessment\nScore: {{ $('AI Investigation Summary').first().json.investigation.risk.score }}/100\nSeverity: {{ $('AI Investigation Summary').first().json.investigation.risk.severity }}\n\nRisk Factors:\n{{ $('AI Investigation Summary').first().json.investigation.risk.reasons.join('\\n') }}\n\nThreat Intelligence\nVirusTotal — Malicious: {{ $('AI Investigation Summary').first().json.investigation.evidence.virustotal_malicious }}\nVirusTotal — Suspicious: {{ $('AI Investigation Summary').first().json.investigation.evidence.virustotal_suspicious }}\nVirusTotal URL — Malicious: {{ $('AI Investigation Summary').first().json.investigation.evidence.virustotal_url_malicious }}\nVirusTotal URL — Suspicious: {{ $('AI Investigation Summary').first().json.investigation.evidence.virustotal_url_suspicious }}\nAbuseIPDB — Confidence: {{ $('AI Investigation Summary').first().json.investigation.evidence.abuse_confidence_score }}\nAbuseIPDB — Reports: {{ $('AI Investigation Summary').first().json.investigation.evidence.abuse_reports }}\nOTX — Pulses: {{ $('AI Investigation Summary').first().json.investigation.evidence.otx_pulse_count }}\nMalicious TI Sources: {{ $('AI Investigation Summary').first().json.investigation.evidence.malicious_source_count }}\n\nActivity Context\nFailed Attempts: {{ $('AI Investigation Summary').first().json.investigation.evidence.failed_attempts }}\nPrivileged Account: {{ $('AI Investigation Summary').first().json.investigation.user.privileged_account }}\nPublic IP: {{ $('AI Investigation Summary').first().json.investigation.network.is_public }}\n\nAI Investigation\n{{ ($json.output?.[0]?.content?.[0]?.text || 'No AI investigation summary available.').slice(0, 1200) }}\n\nAnalyst Action\nReview the available evidence and select Approve or Reject.",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double",
+            "disapproveLabel": "Reject"
+          }
+        },
+        "options": {}
+      },
+      "id": "ff212846-5e78-41a3-b8b2-bf1409a4e2a2",
+      "name": "Send message and wait for response",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        2688,
+        -240
+      ],
+      "webhookId": "6b1e58fa-2639-40e7-b2a9-e8a175d03879",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "igsLEtTH8EoPqSSr",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "87ffa4eb-c2a4-4c11-a9e1-e216b740113b",
+              "leftValue": "={{ $json.data.approved }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "45d8963a-a6e7-46ef-b09b-4e6f9718c692",
+      "name": "If",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2912,
+        -240
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e051e1f5-38c6-4b4f-b291-fb1988c42b04",
+              "name": "incident_status",
+              "value": "Approved - Pending Incident Creation",
+              "type": "string"
+            },
+            {
+              "id": "ee236044-a13e-430f-bcdb-3e57c1a50855",
+              "name": "analyst_decision",
+              "value": "APPROVED",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "49ae1814-483e-4f99-9e68-82fe48ddc2bc",
+      "name": "Edit Fields1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3136,
+        -368
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "owner": {
+          "__rl": true,
+          "value": "ChaudhariParthh",
+          "mode": "list",
+          "cachedResultName": "ChaudhariParthh",
+          "cachedResultUrl": "https://github.com/ChaudhariParthh"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "TriageForge",
+          "mode": "list",
+          "cachedResultName": "TriageForge",
+          "cachedResultUrl": "https://github.com/ChaudhariParthh/TriageForge"
+        },
+        "title": "=TriageForge Incident — {{ $('AI Investigation Summary').first().json.investigation.alert_id }} — {{ $('AI Investigation Summary').first().json.investigation.risk.severity }}",
+        "body": "=TRIAGEFORGE SECURITY INCIDENT\n\nALERT DETAILS\n\nAlert ID: {{ $('AI Investigation Summary').first().json.investigation.alert_id }}\nAlert Type: {{ $('AI Investigation Summary').first().json.investigation.alert_type }}\nRule: {{ $('AI Investigation Summary').first().json.investigation.rule_id }} — {{ $('AI Investigation Summary').first().json.investigation.rule_description }}\nRule Level: {{ $('AI Investigation Summary').first().json.investigation.rule_level }}\n\nAgent: {{ $('AI Investigation Summary').first().json.investigation.agent.name }}\nAgent ID: {{ $('AI Investigation Summary').first().json.investigation.agent.id }}\nHostname: {{ $('AI Investigation Summary').first().json.investigation.agent.hostname }}\n\nUsername: {{ $('AI Investigation Summary').first().json.investigation.user.username }}\nPrivileged Account: {{ $('AI Investigation Summary').first().json.investigation.user.privileged_account }}\n\nSource IP: {{ $('AI Investigation Summary').first().json.investigation.network.source_ip }}\nDestination IP: {{ $('AI Investigation Summary').first().json.investigation.network.destination_ip }}\nPublic IP: {{ $('AI Investigation Summary').first().json.investigation.network.is_public }}\nWhitelisted IP: {{ $('AI Investigation Summary').first().json.investigation.network.is_whitelisted }}\n\nFile Path: {{ $('AI Investigation Summary').first().json.investigation.file.path }}\nProcess: {{ $('AI Investigation Summary').first().json.investigation.file.process }}\n\n\nRISK ASSESSMENT\n\nRisk Score: {{ $('AI Investigation Summary').first().json.investigation.risk.score }}/100\nSeverity: {{ $('AI Investigation Summary').first().json.investigation.risk.severity }}\n\nRisk Factors:\n{{ $('AI Investigation Summary').first().json.investigation.risk.reasons.join('\\n') }}\n\n\nIOC CONTEXT\n\nIP Present: {{ $('AI Investigation Summary').first().json.investigation.iocs.has_ip }}\nHash Present: {{ $('AI Investigation Summary').first().json.investigation.iocs.has_hash }}\nURL Present: {{ $('AI Investigation Summary').first().json.investigation.iocs.has_url }}\nDomain Present: {{ $('AI Investigation Summary').first().json.investigation.iocs.has_domain }}\n\nIP Count: {{ $('AI Investigation Summary').first().json.investigation.iocs.ip_count }}\nHash Count: {{ $('AI Investigation Summary').first().json.investigation.iocs.hash_count }}\nURL Count: {{ $('AI Investigation Summary').first().json.investigation.iocs.url_count }}\nDomain Count: {{ $('AI Investigation Summary').first().json.investigation.iocs.domain_count }}\n\n\nTHREAT INTELLIGENCE\n\nFailed Login Attempts: {{ $('AI Investigation Summary').first().json.investigation.evidence.failed_attempts }}\n\nVirusTotal Malicious: {{ $('AI Investigation Summary').first().json.investigation.evidence.virustotal_malicious }}\nVirusTotal Suspicious: {{ $('AI Investigation Summary').first().json.investigation.evidence.virustotal_suspicious }}\n\nVirusTotal URL Malicious: {{ $('AI Investigation Summary').first().json.investigation.evidence.virustotal_url_malicious }}\nVirusTotal URL Suspicious: {{ $('AI Investigation Summary').first().json.investigation.evidence.virustotal_url_suspicious }}\n\nAbuseIPDB Confidence: {{ $('AI Investigation Summary').first().json.investigation.evidence.abuse_confidence_score }}\nAbuseIPDB Reports: {{ $('AI Investigation Summary').first().json.investigation.evidence.abuse_reports }}\n\nOTX Pulses: {{ $('AI Investigation Summary').first().json.investigation.evidence.otx_pulse_count }}\n\nMalicious TI Sources: {{ $('AI Investigation Summary').first().json.investigation.evidence.malicious_source_count }}\n\n\nAI INVESTIGATION\n\n{{ $('AI Investigation Summary').first().json.investigation.investigation_context }}\n\nAnalyst Question:\n{{ $('AI Investigation Summary').first().json.investigation.analyst_question }}\n\n\nANALYST DECISION\n\nStatus: APPROVED\n\nThis incident was reviewed and approved by the SOC analyst for further investigation and incident tracking.\n\n\nTRIAGEFORGE\n\nAutomated alert triage and enrichment workflow.\nFinal risk decisions remain under analyst control.",
+        "labels": [],
+        "assignees": []
+      },
+      "id": "ee1ae550-f77d-419f-8405-ed83e528a48c",
+      "name": "Create an issue",
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        3360,
+        -368
+      ],
+      "webhookId": "8bd706b7-6614-44db-83f3-f20d6de5bcde",
+      "credentials": {
+        "githubOAuth2Api": {
+          "id": "OkaHeIhXzw1JCdfA",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "alert_database",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "alert_id",
+              "condition": "eq",
+              "keyValue": "={{ $('AI Investigation Summary').first().json.alert_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "analyst_decision",
+              "fieldValue": "=APPROVED"
+            },
+            {
+              "fieldId": "decision_timestamp",
+              "fieldValue": "={{ $json.data.respondedAt }}"
+            },
+            {
+              "fieldId": "incident_status",
+              "fieldValue": "OPEN"
+            }
+          ]
+        }
+      },
+      "id": "55850454-37f1-42ff-a1bd-86153c0eb9d9",
+      "name": "Update alert is Approved ",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3136,
+        -560
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "vy5wrOp4AMZRj1kG",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3d8b5b8e-dd57-4433-accf-01b88732a555",
+              "name": "incident_status",
+              "value": "False Positive - Closed",
+              "type": "string"
+            },
+            {
+              "id": "7b43e691-b791-4dd0-a90d-23298b82ba2d",
+              "name": "closure_reason",
+              "value": "Analyst rejected the alert after review",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ec54a337-1d6c-461c-90f6-8ce349472fcf",
+      "name": "False Positive",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3136,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "alert_database",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "alert_id",
+              "condition": "eq",
+              "keyValue": "={{ $('AI Investigation Summary').first().json.alert_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "analyst_decision",
+              "fieldValue": "={{ $json.data.approved }}"
+            },
+            {
+              "fieldId": "decision_timestamp",
+              "fieldValue": "={{ $json.data.respondedAt }}"
+            },
+            {
+              "fieldId": "incident_status",
+              "fieldValue": "FALSE_POSITIVE"
+            }
+          ]
+        }
+      },
+      "id": "7c09078f-c401-4499-9689-6e19b9fcd379",
+      "name": "Update alert is Rejected",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3136,
+        16
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "vy5wrOp4AMZRj1kG",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "alert_database",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Save Alert to Database').first().json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "analyst_decision",
+              "fieldValue": "QUEUED"
+            },
+            {
+              "fieldId": "incident_status",
+              "fieldValue": "QUEUED"
+            }
+          ]
+        }
+      },
+      "id": "2088df9b-65fa-44da-8aff-e5476ef25e71",
+      "name": "Slack Notification Sent",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2112,
+        -32
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "vy5wrOp4AMZRj1kG",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nreturn [{\n  json: {\n    ...input,\n    queue: {\n      status: \"QUEUED\",\n      priority: input.risk?.severity || \"MEDIUM\",\n      action: \"Analyst review or auto-close based on policy\"\n    }\n  }\n}];"
+      },
+      "id": "fa3a5a6b-83e0-4a77-9b78-730522f3991c",
+      "name": "Low Medium Queue",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "user",
+        "user": {
+          "__rl": true,
+          "value": "U0BULT6R24V",
+          "mode": "list",
+          "cachedResultName": "Parth Chaudhari (@parthchaudhari973)"
+        },
+        "text": "=TRIAGEFORGE — ALERT QUEUED\n\nAlert ID: {{ $('Low Medium Queue').first().json.alert_id }}\nType: {{ $('Low Medium Queue').first().json.alert_type }}\nSource IP: {{ $('Low Medium Queue').first().json.source_ip }}\nUser: {{ $('Low Medium Queue').first().json.username }}\n\nRisk: {{ $('Low Medium Queue').first().json.risk_score }}/100 ({{ $('Low Medium Queue').first().json.severity }})\n\nStatus: Queued\nAction: Analyst review required\n\nRisk Factors:\n{{ JSON.parse($('Low Medium Queue').first().json.risk_reasons).join('\\n') }}",
+        "otherOptions": {
+          "ephemeral": false
+        }
+      },
+      "id": "1f931542-bbae-4912-851d-fa96a26d538e",
+      "name": "Send a message1",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        2688,
+        -48
+      ],
+      "webhookId": "553af4b9-ac29-4d8c-82c7-ad4afd75bb74",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "igsLEtTH8EoPqSSr",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "alert_database",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "alert_id",
+              "fieldValue": "={{ $json.alert_id }}"
+            },
+            {
+              "fieldId": "alert_type",
+              "fieldValue": "={{ $json.alert_type }}"
+            },
+            {
+              "fieldId": "rule_id",
+              "fieldValue": "={{ $json.rule_id }}"
+            },
+            {
+              "fieldId": "rule_level",
+              "fieldValue": "={{ $json.rule_level }}"
+            },
+            {
+              "fieldId": "rule_description",
+              "fieldValue": "={{ $json.rule_description }}"
+            },
+            {
+              "fieldId": "agent_name",
+              "fieldValue": "={{ $json.agent_name }}"
+            },
+            {
+              "fieldId": "agent_id",
+              "fieldValue": "={{ $json.agent_id }}"
+            },
+            {
+              "fieldId": "username",
+              "fieldValue": "={{ $json.username }}"
+            },
+            {
+              "fieldId": "source_ip",
+              "fieldValue": "={{ $json.source_ip }}"
+            },
+            {
+              "fieldId": "destination_ip",
+              "fieldValue": "={{ $json.destination_ip }}"
+            },
+            {
+              "fieldId": "hostname",
+              "fieldValue": "={{ $json.hostname }}"
+            },
+            {
+              "fieldId": "file_path",
+              "fieldValue": "={{ $json.file_path }}"
+            },
+            {
+              "fieldId": "process",
+              "fieldValue": "={{ $json.process }}"
+            },
+            {
+              "fieldId": "failed_attempts",
+              "fieldValue": "={{ $json.failed_attempts }}"
+            },
+            {
+              "fieldId": "successful_login_after_bruteforce",
+              "fieldValue": "={{ $json.successful_login_after_bruteforce }}"
+            },
+            {
+              "fieldId": "privileged_account",
+              "fieldValue": "={{ $json.privileged_account }}"
+            },
+            {
+              "fieldId": "unusual_country",
+              "fieldValue": "={{ $json.unusual_country }}"
+            },
+            {
+              "fieldId": "outside_normal_hours",
+              "fieldValue": "={{ $json.outside_normal_hours }}"
+            },
+            {
+              "fieldId": "timestamp",
+              "fieldValue": "={{ $json.timestamp }}"
+            },
+            {
+              "fieldId": "analyst_decision",
+              "fieldValue": "={{ $json.analyst_decision }}"
+            },
+            {
+              "fieldId": "severity",
+              "fieldValue": "={{ $json.risk.severity }}"
+            },
+            {
+              "fieldId": "risk_reasons",
+              "fieldValue": "={{ JSON.stringify($json.risk.reasons) }}"
+            },
+            {
+              "fieldId": "incident_status",
+              "fieldValue": "={{ $json.incident_status }}"
+            },
+            {
+              "fieldId": "risk_score",
+              "fieldValue": "={{ $json.risk.score }}"
+            }
+          ]
+        }
+      },
+      "id": "2eb8034b-af83-4c20-9ddc-200d254af77e",
+      "name": "Save Alert to Database",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1872,
+        -384
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "vy5wrOp4AMZRj1kG",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "wazuh alert": [
+      {
+        "json": {
+          "headers": {
+            "host": "hyperx.app.n8n.cloud",
+            "user-agent": "Python-urllib/3.9",
+            "content-length": "1854",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "106.221.210.145",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "IN",
+            "cf-ray": "a38ff875ac0f0058-BOM",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "x-forwarded-for": "106.221.210.145, 172.70.218.226",
+            "x-forwarded-host": "hyperx.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-swc-7-6c7676c857-cdzvt",
+            "x-is-trusted": "yes",
+            "x-real-ip": "106.221.210.145"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "timestamp": "2026-09-10T16:56:55.699+0000",
+            "rule": {
+              "level": 10,
+              "description": "sshd: brute force trying to get access to the system. Non existent user.",
+              "id": "5712",
+              "mitre": {
+                "id": [
+                  "T1110"
+                ],
+                "tactic": [
+                  "Credential Access"
+                ],
+                "technique": [
+                  "Brute Force"
+                ]
+              },
+              "frequency": 8,
+              "firedtimes": 1,
+              "mail": false,
+              "groups": [
+                "syslog",
+                "sshd",
+                "authentication_failures"
+              ],
+              "gdpr": [
+                "IV_35.7.d",
+                "IV_32.2"
+              ],
+              "hipaa": [
+                "164.312.b"
+              ],
+              "nist_800_53": [
+                "SI.4",
+                "AU.14",
+                "AC.7"
+              ],
+              "pci_dss": [
+                "11.4",
+                "10.2.4",
+                "10.2.5"
+              ],
+              "tsc": [
+                "CC6.1",
+                "CC6.8",
+                "CC7.2",
+                "CC7.3"
+              ]
+            },
+            "agent": {
+              "id": "001",
+              "name": "ubuntu-wazuh-agent",
+              "ip": "10.0.2.15"
+            },
+            "manager": {
+              "name": "wazuh-server"
+            },
+            "id": "1789059415.57083",
+            "previous_output": "Sep 10 16:56:54 ubuntuserver sshd[1942]: Failed password for invalid user testuser from 8.8.8.8 port 40007 ssh2\nSep 10 16:56:54 ubuntuserver sshd[1938]: Failed password for invalid user testuser from 8.8.8.8 port 40006 ssh2\nSep 10 16:56:54 ubuntuserver sshd[1934]: Failed password for invalid user testuser from 8.8.8.8 port 40005 ssh2\nSep 10 16:56:54 ubuntuserver sshd[1930]: Failed password for invalid user testuser from 8.8.8.8 port 40004 ssh2\nSep 10 16:56:54 ubuntuserver sshd[1922]: Failed password for invalid user testuser from 8.8.8.8 port 40002 ssh2\nSep 10 16:56:54 ubuntuserver sshd[1926]: Failed password for invalid user testuser from 8.8.8.8 port 40003 ssh2\nSep 10 16:56:54 ubuntuserver sshd[1918]: Failed password for invalid user testuser from 8.8.8.8 port 40001 ssh2",
+            "full_log": "Sep 10 16:56:54 ubuntuserver sshd[1946]: Failed password for invalid user testuser from 8.8.8.8 port 40008 ssh2",
+            "predecoder": {
+              "program_name": "sshd",
+              "timestamp": "Sep 10 16:56:54",
+              "hostname": "ubuntuserver"
+            },
+            "decoder": {
+              "parent": "sshd",
+              "name": "sshd"
+            },
+            "data": {
+              "srcip": "8.8.8.8",
+              "srcuser": "testuser"
+            },
+            "location": "journald"
+          },
+          "webhookUrl": "https://hyperx.app.n8n.cloud/webhook/triageforge-alert",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "wazuh alert": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "IOC Extraction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IOC Extraction": {
+      "main": [
+        [
+          {
+            "node": "IOC Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IOC Router": {
+      "main": [
+        [
+          {
+            "node": "VirusTotal HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "VirusTotal (Hash)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "VirusTotal HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Normalise VirusTotal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalise VirusTotal": {
+      "main": [
+        [
+          {
+            "node": "AbuseIPDB         HTTP Request IP Reputation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AbuseIPDB         HTTP Request IP Reputation": {
+      "main": [
+        [
+          {
+            "node": "Normalize AbuseIPDB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize AbuseIPDB": {
+      "main": [
+        [
+          {
+            "node": "GeoIP Lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GeoIP Lookup": {
+      "main": [
+        [
+          {
+            "node": "Normalize GeoIP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize GeoIP": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VirusTotal (Hash)": {
+      "main": [
+        [
+          {
+            "node": "Normalize VirusTotal Hash",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize VirusTotal Hash": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "URL/Domain Enrichment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "URL/Domain Enrichment": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "OTX Domain Lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OTX Domain Lookup": {
+      "main": [
+        [
+          {
+            "node": "Normalize OTX1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize OTX1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Correlation Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Correlation Engine": {
+      "main": [
+        [
+          {
+            "node": "Risk Scoring",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Risk Scoring": {
+      "main": [
+        [
+          {
+            "node": "Risk Routing",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Save Alert to Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Risk Routing": {
+      "main": [
+        [
+          {
+            "node": "AI Investigation Summary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack Notification Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Investigation Summary": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Send message and wait for response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message and wait for response": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update alert is Approved ",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "False Positive",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update alert is Rejected",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Create an issue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Notification Sent": {
+      "main": [
+        [
+          {
+            "node": "Low Medium Queue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Low Medium Queue": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "e907d8b2-ea90-4387-b18d-e412f6455ce2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "02b03f8f6708cf55aa8fe4e653101fef430e51a92ffa068f003a779f3f60d548"
+  },
+  "nodeGroups": [],
+  "id": "N800pM0NoA36ia8h",
+  "tags": []
+}

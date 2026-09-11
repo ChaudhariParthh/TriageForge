@@ -1,4 +1,5 @@
-
+TriageForge/
+│
 ├── README.md
 │
 ├── architecture/
@@ -14,8 +15,32 @@
 │   │
 │   └── README.md
 │
+├── code/                              ← ACTUAL JAVASCRIPT CODE
+│   ├── ioc-extraction.js
+│   ├── normalize-virustotal.js
+│   ├── normalize-abuseipdb.js
+│   ├── normalize-geoip.js
+│   ├── normalize-otx.js
+│   ├── correlation-engine.js
+│   ├── risk-scoring.js
+│   ├── ai-investigation.js
+│   └── incident-response.js
+│
+├── prompts/                           ← AI PROMPTS + DEVELOPMENT PROOF
+│   ├── 01-ioc-extraction.md
+│   ├── 02-virustotal-normalization.md
+│   ├── 03-abuseipdb-normalization.md
+│   ├── 04-geoip-normalization.md
+│   ├── 05-otx-normalization.md
+│   ├── 06-correlation-engine.md
+│   ├── 07-risk-scoring.md
+│   ├── 08-ai-investigation.md
+│   └── 09-incident-response.md
+│
 ├── alerts/
 │   ├── brute-force/
+│   │   ├── sample-alert.json
+│   │   └── expected-output.json
 │   ├── suspicious-login/
 │   ├── phishing/
 │   └── malware/
@@ -43,16 +68,19 @@
 │   ├── setup.md
 │   ├── architecture.md
 │   ├── threat-model.md
+│   ├── api-integrations.md
 │   └── limitations.md
 │
 ├── screenshots/
-│   ├── 01-alert.png
-│   ├── 02-enrichment.png
-│   ├── 03-risk-score.png
-│   ├── 04-ai-summary.png
-│   ├── 05-analyst-review.png
-│   ├── 06-incident.png
-│   └── 07-dashboard.png
+│   ├── 01-alert-ingestion.png
+│   ├── 02-ioc-extraction.png
+│   ├── 03-threat-intel-enrichment.png
+│   ├── 04-correlation.png
+│   ├── 05-risk-score.png
+│   ├── 06-ai-summary.png
+│   ├── 07-analyst-review.png
+│   ├── 08-incident.png
+│   └── 09-dashboard.png
 │
 ├── demo/
 │   └── demo-script.md
